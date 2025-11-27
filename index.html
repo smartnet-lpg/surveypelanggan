@@ -1,1 +1,240 @@
-Riky
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survei Kepuasan SmartNet</title>
+    <!-- Memuat Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Memuat Icon (Phosphor Icons) untuk bintang --><script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Gaya Kustom untuk Font Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc; /* Latar belakang sangat terang */
+        }
+        /* Mengatur warna utama SmartNet (Warna Baru: #FFB300) */
+        .smartnet-primary {
+            background-color: #FFB300; 
+        }
+        .smartnet-text {
+            color: #FFB300; 
+        }
+        .smartnet-border {
+            border-color: #FFB300; 
+        }
+        /* Gaya Bintang (Rating) */
+        .rating-star {
+            cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
+            font-size: 2.5rem; /* Ukuran besar untuk mobile */
+        }
+        .rating-star:hover {
+            transform: scale(1.1);
+        }
+        .filled {
+            color: #fbbf24; /* Amber 400 - Kuning emas (Tetap untuk bintang rating) */
+        }
+        .empty {
+            color: #d1d5db; /* Abu-abu terang */
+        }
+        /* Animasi Transisi untuk elemen */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Gaya tambahan untuk logo gambar */
+        .logo-image {
+            max-width: 180px; /* Atur ukuran maksimum logo, sedikit lebih besar */
+            height: auto;
+            margin: 0 auto; /* Tengah-kan gambar */
+            display: block; /* Agar margin auto berfungsi */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="survey-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 sm:p-8 md:p-10 transition-all duration-300">
+
+        <!-- STEP 1: Halaman Selamat Datang --><div id="step-welcome" class="fade-in text-center">
+            <!-- Logo SmartNet Baru --><img src="https://images.bukaolshop.com/hosting/154635/fc41b2aadc37488720.png" alt="SmartNet Logo" class="logo-image mb-2">
+            
+            <h1 class="text-3xl font-bold mb-4 text-gray-800">Selamat Datang di Survei SmartNet</h1>
+            <p class="text-gray-600 mb-8">Kami menghargai waktu Anda. Mohon luangkan beberapa saat untuk memberikan **Rating Kepuasan Keseluruhan** Anda. Masukan Anda sangat penting bagi kami.</p>
+            <button id="start-survey-btn" class="w-full smartnet-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition duration-150 shadow-md hover:shadow-lg">
+                Mulai Survei
+            </button>
+            <p class="text-sm text-gray-400 mt-4">Proses cepat dan anonim.</p>
+        </div>
+
+        <!-- STEP 2: Halaman Survei Utama (Rating & Komentar) --><div id="step-survey" class="hidden">
+            <h2 class="text-2xl font-bold mb-2 text-gray-800 text-center">Kepuasan Anda Terhadap SmartNet?</h2>
+            <p class="text-gray-600 mb-8 text-center">Pilih rating 1 (Sangat Tidak Puas) hingga 5 (Sangat Puas).</p>
+
+            <!-- Bagian Rating Bintang --><div class="p-4 bg-gray-50 rounded-lg shadow-inner mb-6 text-center">
+                <p class="font-medium text-gray-700 mb-3 text-lg">Rating Kepuasan Keseluruhan</p>
+                <div id="overall-rating-container" class="flex justify-center space-x-3 sm:space-x-4">
+                    <!-- Bintang akan di-inject oleh JS --></div>
+            </div>
+
+            <!-- Bagian Komentar --><h2 class="text-2xl font-bold mb-4 text-gray-800 text-center">Masukan Lebih Lanjut (Opsional)</h2>
+            <label for="comments" class="block text-lg font-medium text-gray-700 mb-2">Komentar/Saran Anda:</label>
+            <textarea id="comments" rows="4" placeholder="Tulis masukan Anda di sini (opsional)..."
+                class="w-full p-3 border smartnet-border rounded-lg focus:ring-2 focus:ring-amber-200 resize-none transition duration-150"></textarea>
+
+            <button id="submit-survey-btn" class="mt-8 w-full smartnet-primary text-white font-semibold py-3 rounded-xl transition duration-150 opacity-50 cursor-not-allowed" disabled>
+                Kirim Survei
+            </button>
+        </div>
+
+        <!-- STEP 3: Halaman Terima Kasih --><div id="step-thank-you" class="hidden text-center fade-in">
+            <!-- Logo SmartNet Baru di halaman terima kasih --><img src="https://images.bukaolshop.com/hosting/154635/fc41b2aadc37488720.png" alt="SmartNet Logo" class="logo-image mb-2">
+
+            <h1 class="text-3xl font-bold mb-4 text-gray-800">Terima Kasih!</h1>
+            <p class="text-gray-600 mb-8">Masukan Anda telah berhasil kami terima. Kami akan menggunakannya untuk terus meningkatkan kualitas dan pengalaman layanan SmartNet.</p>
+            <div class="smartnet-text text-xl font-semibold">
+                SmartNet, Internet Cerdas untuk Anda.
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Variabel untuk menyimpan hasil rating keseluruhan
+        let overallRating = 0;
+
+        // Mendapatkan elemen DOM
+        const steps = {
+            welcome: document.getElementById('step-welcome'),
+            survey: document.getElementById('step-survey'),
+            thankYou: document.getElementById('step-thank-you')
+        };
+        const startSurveyBtn = document.getElementById('start-survey-btn');
+        const submitSurveyBtn = document.getElementById('submit-survey-btn');
+        const commentsInput = document.getElementById('comments');
+        const overallRatingContainer = document.getElementById('overall-rating-container');
+
+        // Fungsi untuk menampilkan langkah tertentu
+        function showStep(stepName) {
+            Object.values(steps).forEach(el => el.classList.add('hidden'));
+            steps[stepName].classList.remove('hidden');
+            steps[stepName].classList.add('fade-in');
+        }
+
+        // Fungsi untuk membuat bintang rating
+        function createStars() {
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+                star.className = 'ph-fill ph-star rating-star empty';
+                star.dataset.value = i;
+                
+                // Menambahkan event listener
+                star.addEventListener('click', handleStarClick);
+                star.addEventListener('mouseover', handleStarHover);
+                star.addEventListener('mouseout', handleStarOut);
+                
+                overallRatingContainer.appendChild(star);
+            }
+        }
+
+        // Fungsi untuk menangani klik bintang (set rating)
+        function handleStarClick(event) {
+            const star = event.currentTarget;
+            const value = parseInt(star.dataset.value);
+            
+            // Simpan hasil
+            overallRating = value;
+            
+            // Perbarui tampilan visual
+            updateStarDisplay(overallRatingContainer, overallRating);
+            
+            // Aktifkan tombol Kirim
+            checkRatingSet();
+        }
+
+        // Fungsi untuk menangani hover bintang (visual feedback)
+        function handleStarHover(event) {
+            const star = event.currentTarget;
+            const value = parseInt(star.dataset.value);
+            updateStarDisplay(overallRatingContainer, value, true);
+        }
+        
+        // Fungsi untuk menangani mouseout (kembali ke state tersimpan atau kosong)
+        function handleStarOut(event) {
+            updateStarDisplay(overallRatingContainer, overallRating);
+        }
+
+        // Fungsi untuk memperbarui tampilan bintang
+        function updateStarDisplay(container, value, isHover = false) {
+            Array.from(container.children).forEach(star => {
+                const starValue = parseInt(star.dataset.value);
+                if (starValue <= value) {
+                    star.classList.remove('empty', 'text-gray-400');
+                    star.classList.add('filled', 'text-amber-400');
+                    if (isHover) star.classList.add('!text-amber-300'); // Sedikit berbeda saat hover
+                } else {
+                    star.classList.remove('filled', 'text-amber-400', '!text-amber-300');
+                    star.classList.add('empty', 'text-gray-400');
+                }
+            });
+        }
+
+        // Fungsi untuk memeriksa apakah rating sudah diisi
+        function checkRatingSet() {
+            if (overallRating > 0) {
+                submitSurveyBtn.disabled = false;
+                submitSurveyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                submitSurveyBtn.classList.add('hover:opacity-90', 'shadow-md', 'hover:shadow-lg');
+            } else {
+                submitSurveyBtn.disabled = true;
+                submitSurveyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                submitSurveyBtn.classList.remove('hover:opacity-90', 'shadow-md', 'hover:shadow-lg');
+            }
+        }
+
+        // --- Inisialisasi dan Event Listeners ---
+
+        // Inisialisasi bintang
+        createStars();
+        checkRatingSet(); // Pastikan tombol Kirim dinonaktifkan di awal
+
+        // 1. Tombol Mulai Survei
+        startSurveyBtn.addEventListener('click', () => {
+            showStep('survey');
+        });
+
+        // 2. Tombol Kirim Survei
+        submitSurveyBtn.addEventListener('click', () => {
+            if (overallRating === 0) {
+                // Walaupun tombolnya dinonaktifkan, ini sebagai double check
+                console.error("Mohon berikan rating terlebih dahulu.");
+                return; 
+            }
+            
+            const comments = commentsInput.value.trim();
+
+            // Kumpulkan data akhir (simulasi pengiriman data ke backend)
+            const finalData = {
+                overallRating: overallRating,
+                comments: comments,
+                timestamp: new Date().toISOString(),
+                // Di sini Anda akan menambahkan logika fetch/API untuk mengirim data
+            };
+
+            console.log('--- Data Survei Siap Dikirim ---');
+            console.log(finalData);
+            
+            // Tampilkan pesan terima kasih setelah simulasi pengiriman
+            showStep('thankYou');
+        });
+        
+        // Pastikan tampilan awal adalah halaman selamat datang
+        showStep('welcome');
+
+    </script>
+</body>
+</html>
+

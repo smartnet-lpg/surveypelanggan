@@ -76,7 +76,8 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<!-- Perubahan 1: Mengatur posisi kontainer di bagian atas halaman (menghilangkan items-center dan menambahkan pt-10) -->
+<body class="flex justify-center p-4 pt-10">
 
     <div id="survey-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 sm:p-8 md:p-10 transition-all duration-300">
 
@@ -117,20 +118,23 @@
             <!-- JUDUL DIPERBARUI: Text diubah & Font diperkecil menjadi text-xl -->
             <h2 class="text-xl font-bold mb-2 text-gray-800 text-center">Kepuasan Anda Terhadap Layanan SmartNet?</h2>
             
-            <!-- Mengganti keterangan rating yang lama -->
-            <p class="text-gray-600 mb-8 text-center">Pilih rating 1 (Buruk) hingga 5 (Sangat Baik).</p>
+            <!-- Perubahan 3: Teks rating diperkecil (text-xs), dicetak miring (italic), dan warna abu-abu lebih muda (text-gray-500) -->
+            <p class="text-xs italic text-gray-500 mb-8 text-center">Pilih rating 1 (Buruk) hingga 5 (Sangat Baik).</p>
 
             <!-- Rating 1: Pelayanan Pelanggan -->
             <div class="p-4 bg-gray-50 rounded-lg shadow-inner mb-6 text-center">
                 <p class="font-bold text-gray-800 mb-1 text-lg">Pelayanan Pelanggan</p>
-                <!-- Deskripsi umum untuk pelayanan - DIFIX: Menghilangkan tanda ** -->
+                <!-- Deskripsi umum untuk pelayanan -->
                 <p class="text-sm text-gray-600 mb-4">Nilai kepuasan Anda terhadap dukungan layanan admin kami dan Kualitas Jaringan Internet Anda.</p> 
                 
-                <div id="pelayanan-rating-container" class="flex justify-center space-x-3 sm:space-x-4">
-                    <!-- Bintang akan di-inject oleh JS -->
+                <!-- Perubahan 2: Wrapper untuk membatasi lebar area rating (max-w-xs) -->
+                <div class="max-w-xs mx-auto">
+                    <div id="pelayanan-rating-container" class="flex justify-center space-x-3 sm:space-x-4">
+                        <!-- Bintang akan di-inject oleh JS -->
+                    </div>
+                    <!-- Feedback Text for Pelayanan - Ukuran font dikecilkan menjadi text-sm -->
+                    <div id="pelayanan-feedback" class="h-6 mt-3 text-sm font-bold text-gray-700 transition-all duration-150"></div>
                 </div>
-                <!-- Feedback Text for Pelayanan - Ukuran font dikecilkan menjadi text-sm -->
-                <div id="pelayanan-feedback" class="h-6 mt-3 text-sm font-bold text-gray-700 transition-all duration-150"></div>
             </div>
 
             <!-- Rating 2: Petugas di Lokasi -->
@@ -139,11 +143,14 @@
                 <!-- Deskripsi diperbarui agar mewakili semua tim yang berkunjung -->
                 <p class="text-sm text-gray-600 mb-4">Nilai keramahan, profesionalitas, dan pelayanan tim kami saat berkunjung.</p> 
                 
-                <div id="tim-rating-container" class="flex justify-center space-x-3 sm:space-x-4">
-                    <!-- Bintang akan di-inject oleh JS -->
+                <!-- Perubahan 2: Wrapper untuk membatasi lebar area rating (max-w-xs) -->
+                <div class="max-w-xs mx-auto">
+                    <div id="tim-rating-container" class="flex justify-center space-x-3 sm:space-x-4">
+                        <!-- Bintang akan di-inject oleh JS -->
+                    </div>
+                    <!-- Feedback Text for Tim - Ukuran font dikecilkan menjadi text-sm -->
+                    <div id="tim-feedback" class="h-6 mt-3 text-sm font-bold text-gray-700 transition-all duration-150"></div>
                 </div>
-                <!-- Feedback Text for Tim - Ukuran font dikecilkan menjadi text-sm -->
-                <div id="tim-feedback" class="h-6 mt-3 text-sm font-bold text-gray-700 transition-all duration-150"></div>
             </div>
 
             <!-- Bagian Komentar. Ukuran font diubah dari text-xl menjadi text-lg, dan margin disesuaikan. -->

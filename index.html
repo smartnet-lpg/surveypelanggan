@@ -114,16 +114,40 @@
 
         <!-- STEP 2: Halaman Survei Utama (Rating & Komentar) -->
         <div id="step-survey" class="hidden">
-            <h2 class="text-2xl font-bold mb-2 text-gray-800 text-center">Kepuasan Anda Terhadap SmartNet?</h2>
-            <p class="text-gray-600 mb-8 text-center">Pilih rating 1 (Sangat Tidak Puas) hingga 5 (Sangat Puas).</p>
+            <!-- JUDUL DIPERBARUI: Text diubah & Font diperkecil menjadi text-xl -->
+            <h2 class="text-xl font-bold mb-2 text-gray-800 text-center">Kepuasan Anda Terhadap Layanan SmartNet?</h2>
+            
+            <!-- Mengganti keterangan rating yang lama -->
+            <p class="text-gray-600 mb-8 text-center">Pilih rating 1 (Buruk) hingga 5 (Sangat Baik).</p>
 
-            <!-- Bagian Rating Bintang --><div class="p-4 bg-gray-50 rounded-lg shadow-inner mb-6 text-center">
-                <p class="font-medium text-gray-700 mb-3 text-lg">Rating Kepuasan Keseluruhan</p>
-                <div id="overall-rating-container" class="flex justify-center space-x-3 sm:space-x-4">
-                    <!-- Bintang akan di-inject oleh JS --></div>
+            <!-- Rating 1: Pelayanan Pelanggan -->
+            <div class="p-4 bg-gray-50 rounded-lg shadow-inner mb-6 text-center">
+                <p class="font-bold text-gray-800 mb-1 text-lg">Pelayanan Pelanggan</p>
+                <!-- Deskripsi umum untuk pelayanan - DIFIX: Menghilangkan tanda ** -->
+                <p class="text-sm text-gray-600 mb-4">Nilai kepuasan Anda terhadap dukungan layanan admin kami dan Kualitas Jaringan Internet Anda.</p> 
+                
+                <div id="pelayanan-rating-container" class="flex justify-center space-x-3 sm:space-x-4">
+                    <!-- Bintang akan di-inject oleh JS -->
+                </div>
+                <!-- Feedback Text for Pelayanan - Ukuran font dikecilkan menjadi text-sm -->
+                <div id="pelayanan-feedback" class="h-6 mt-3 text-sm font-bold text-gray-700 transition-all duration-150"></div>
             </div>
 
-            <!-- Bagian Komentar. Ukuran font diubah dari text-xl menjadi text-lg, dan margin disesuaikan. --><h2 class="text-lg font-bold mb-3 text-gray-800 text-center">Masukan Lebih Lanjut (Opsional)</h2>
+            <!-- Rating 2: Petugas di Lokasi -->
+            <div class="p-4 bg-gray-50 rounded-lg shadow-inner mb-6 text-center">
+                <p class="font-bold text-gray-800 mb-1 text-lg">Petugas SmartNet di Lokasi</p>
+                <!-- Deskripsi diperbarui agar mewakili semua tim yang berkunjung -->
+                <p class="text-sm text-gray-600 mb-4">Nilai keramahan, profesionalitas, dan pelayanan tim kami saat berkunjung.</p> 
+                
+                <div id="tim-rating-container" class="flex justify-center space-x-3 sm:space-x-4">
+                    <!-- Bintang akan di-inject oleh JS -->
+                </div>
+                <!-- Feedback Text for Tim - Ukuran font dikecilkan menjadi text-sm -->
+                <div id="tim-feedback" class="h-6 mt-3 text-sm font-bold text-gray-700 transition-all duration-150"></div>
+            </div>
+
+            <!-- Bagian Komentar. Ukuran font diubah dari text-xl menjadi text-lg, dan margin disesuaikan. -->
+            <h2 class="text-lg font-bold mb-3 text-gray-800 text-center">Masukan Lebih Lanjut (Opsional)</h2>
             <label for="comments" class="block text-lg font-medium text-gray-700 mb-2">Komentar/Saran Anda:</label>
             <textarea id="comments" rows="4" placeholder="Tulis masukan Anda di sini (opsional)..."
                 class="w-full p-3 border smartnet-border rounded-lg focus:ring-2 focus:ring-amber-200 resize-none transition duration-150"></textarea>
@@ -163,9 +187,19 @@
         const TELEGRAM_CHAT_ID = '-1003435723079';
         const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
         const MAX_RETRIES = 3;
+        
+        // Mapping label rating 1-5 (Buruk sampai Sangat Baik)
+        const RATING_LABELS = {
+            1: 'Buruk',
+            2: 'Kurang Baik',
+            3: 'Cukup Baik',
+            4: 'Baik',
+            5: 'Sangat Baik'
+        };
 
-        // Variabel untuk menyimpan hasil rating keseluruhan
-        let overallRating = 0;
+        // Variabel untuk menyimpan hasil rating DUA kategori
+        let pelayananRating = 0;
+        let timRating = 0;
 
         // Mendapatkan elemen DOM
         const steps = {
@@ -176,7 +210,13 @@
         const startSurveyBtn = document.getElementById('start-survey-btn');
         const submitSurveyBtn = document.getElementById('submit-survey-btn');
         const commentsInput = document.getElementById('comments');
-        const overallRatingContainer = document.getElementById('overall-rating-container');
+        
+        // Container rating
+        const pelayananRatingContainer = document.getElementById('pelayanan-rating-container');
+        const timRatingContainer = document.getElementById('tim-rating-container');
+        // Elemen feedback
+        const pelayananFeedback = document.getElementById('pelayanan-feedback');
+        const timFeedback = document.getElementById('tim-feedback');
 
         // Fungsi untuk menampilkan langkah tertentu
         function showStep(stepName) {
@@ -185,30 +225,38 @@
             steps[stepName].classList.add('fade-in');
         }
 
-        // Fungsi untuk membuat bintang rating
-        function createStars() {
-            for (let i = 1; i <= 5; i++) {
-                const star = document.createElement('i');
-                star.className = 'ph-fill ph-star rating-star empty';
-                star.dataset.value = i;
-                
-                // Menambahkan event listener
-                star.addEventListener('click', handleStarClick);
-                star.addEventListener('mouseover', handleStarHover);
-                star.addEventListener('mouseout', handleStarOut);
-                
-                overallRatingContainer.appendChild(star);
+        // Fungsi untuk memperbarui tampilan teks feedback
+        function updateFeedbackText(type, value, isHover = false) {
+            const feedbackEl = type === 'pelayanan' ? pelayananFeedback : timFeedback;
+            const currentRating = type === 'pelayanan' ? pelayananRating : timRating;
+
+            // Tentukan nilai yang akan ditampilkan: nilai hover atau nilai yang tersimpan
+            const displayValue = isHover ? value : currentRating;
+            
+            if (displayValue > 0) {
+                feedbackEl.textContent = RATING_LABELS[displayValue];
+                feedbackEl.classList.add('smartnet-text'); // Tambahkan warna smartnet
+            } else {
+                feedbackEl.textContent = ''; // Kosongkan jika rating 0
+                feedbackEl.classList.remove('smartnet-text');
             }
         }
-
+        
         // Fungsi untuk menangani klik bintang (set rating)
         function handleStarClick(event) {
             const star = event.currentTarget;
             const value = parseInt(star.dataset.value);
-            
-            overallRating = value;
-            
-            updateStarDisplay(overallRatingContainer, overallRating);
+            const type = star.dataset.type; // 'pelayanan' or 'tim'
+
+            if (type === 'pelayanan') {
+                pelayananRating = value;
+                updateStarDisplay(pelayananRatingContainer, pelayananRating);
+                updateFeedbackText('pelayanan', pelayananRating, false); // Tampilkan teks rating tersimpan
+            } else if (type === 'tim') {
+                timRating = value;
+                updateStarDisplay(timRatingContainer, timRating);
+                updateFeedbackText('tim', timRating, false); // Tampilkan teks rating tersimpan
+            }
             
             checkRatingSet();
         }
@@ -217,12 +265,25 @@
         function handleStarHover(event) {
             const star = event.currentTarget;
             const value = parseInt(star.dataset.value);
-            updateStarDisplay(overallRatingContainer, value, true);
+            const type = star.dataset.type;
+
+            const container = type === 'pelayanan' ? pelayananRatingContainer : timRatingContainer;
+            updateStarDisplay(container, value, true);
+            updateFeedbackText(type, value, true); // Tampilkan teks rating hover
         }
         
         // Fungsi untuk menangani mouseout (kembali ke state tersimpan atau kosong)
         function handleStarOut(event) {
-            updateStarDisplay(overallRatingContainer, overallRating);
+            const star = event.currentTarget;
+            const type = star.dataset.type;
+
+            if (type === 'pelayanan') {
+                updateStarDisplay(pelayananRatingContainer, pelayananRating);
+                updateFeedbackText('pelayanan', pelayananRating, false); // Kembali ke teks rating tersimpan
+            } else if (type === 'tim') {
+                updateStarDisplay(timRatingContainer, timRating);
+                updateFeedbackText('tim', timRating, false); // Kembali ke teks rating tersimpan
+            }
         }
 
         // Fungsi untuk memperbarui tampilan bintang
@@ -239,10 +300,31 @@
                 }
             });
         }
+        
+        // Fungsi untuk membuat bintang rating
+        function createStarsForContainer(container, type) {
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+                // Kelas Bintang: ph-fill ph-star dari Phosphor Icons
+                star.className = 'ph-fill ph-star rating-star empty'; 
+                star.dataset.value = i;
+                star.dataset.type = type; // Menandai jenis rating
+                
+                // Menambahkan event listener
+                star.addEventListener('click', handleStarClick);
+                star.addEventListener('mouseover', handleStarHover);
+                star.addEventListener('mouseout', handleStarOut);
+                
+                container.appendChild(star);
+            }
+        }
 
-        // Fungsi untuk memeriksa apakah rating sudah diisi
+        // Fungsi untuk memeriksa apakah kedua rating sudah diisi
         function checkRatingSet() {
-            if (overallRating > 0) {
+            // Tombol kirim hanya aktif jika kedua rating > 0
+            const isReady = pelayananRating > 0 && timRating > 0;
+            
+            if (isReady) {
                 submitSurveyBtn.disabled = false;
                 submitSurveyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 submitSurveyBtn.classList.add('hover:opacity-90', 'shadow-md', 'hover:shadow-lg');
@@ -255,22 +337,32 @@
 
         /**
          * Mengirim data survei ke grup Telegram menggunakan API Bot.
-         * @param {number} rating Rating yang dipilih.
-         * @param {string} comments Komentar yang dimasukkan.
-         * @returns {Promise<boolean>} True jika berhasil, False jika gagal.
+         * Kami menggunakan Markdown untuk format yang lebih rapi di Telegram.
          */
-        async function sendToTelegram(rating, comments) {
-            // Logika pesan Telegram yang minimalis (hanya rating dan masukan)
+        async function sendToTelegram() {
+            const comments = commentsInput.value.trim();
             const formattedComments = comments.length > 0 ? comments : "Tidak ada.";
-            const messageText = `Rating:\n` +
-                                `${rating} dari 5\n\n` +
-                                `Masukan:\n` +
+            
+            // Hanya mengambil label teks
+            const pelayananLabel = RATING_LABELS[pelayananRating] || 'N/A';
+            const timLabel = RATING_LABELS[timRating] || 'N/A';
+
+
+            // Format pesan di Telegram (Hanya menggunakan label teks rating)
+            const messageText = `*Hasil Survei Kepuasan SmartNet*\n\n` +
+                                `------------------------------------\n` +
+                                `*1. Pelayanan Pelanggan:*\n` +
+                                `-> ${pelayananLabel}\n\n` +
+                                `*2. Petugas SmartNet di Lokasi:*\n` + 
+                                `-> ${timLabel}\n\n` +
+                                `------------------------------------\n` +
+                                `*Masukan Lebih Lanjut:*\n` +
                                 `${formattedComments}`;
-                                // Baris 'data masuk:' telah dihapus
 
             const payload = {
                 chat_id: TELEGRAM_CHAT_ID,
                 text: messageText,
+                parse_mode: 'Markdown' 
             };
 
             let success = false;
@@ -293,17 +385,13 @@
                         } else {
                             console.error('API Telegram merespons dengan kesalahan:', result);
                         }
-                    }
-                    // Simplified error handling and backoff mechanism
-                    // ... (error handling logic remains the same for the API call process)
-                     else {
+                    } else {
                         console.error(`Gagal mengirim ke Telegram. Status HTTP: ${response.status}`);
                     }
                 } catch (error) {
                     console.error('Terjadi kesalahan saat melakukan fetch ke Telegram API:', error);
                 }
 
-                // Exponential backoff delay (menghindari spam API dan memberikan waktu untuk pulih)
                 if (!success && i < MAX_RETRIES - 1) {
                     const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
                     await new Promise(resolve => setTimeout(resolve, delay));
@@ -316,12 +404,10 @@
 
         // Fungsi untuk menangani seluruh proses pengiriman
         async function handleSubmission() {
-            if (overallRating === 0) {
-                console.error("Mohon berikan rating terlebih dahulu.");
+            if (pelayananRating === 0 || timRating === 0) {
+                console.error("Mohon berikan kedua rating terlebih dahulu.");
                 return;
             }
-
-            const comments = commentsInput.value.trim();
 
             // Tampilkan loading state
             submitSurveyBtn.disabled = true;
@@ -329,7 +415,7 @@
             submitSurveyBtn.classList.add('opacity-70');
             submitSurveyBtn.classList.remove('hover:opacity-90', 'shadow-md', 'hover:shadow-lg');
 
-            const success = await sendToTelegram(overallRating, comments);
+            const success = await sendToTelegram();
 
             // Sembunyikan loading state dan tampilkan halaman Terima Kasih
             submitSurveyBtn.innerHTML = 'Kirim Survei'; 
@@ -338,8 +424,6 @@
             if (success) {
                 showStep('thankYou');
             } else {
-                // Jika gagal setelah semua percobaan, tetap tampilkan Terima Kasih,
-                // dan ingatkan bahwa pengiriman mungkin tidak berhasil
                 console.error("Penting: Pengiriman survei ke Telegram gagal setelah semua percobaan. Data telah di-log di konsol.");
                 showStep('thankYou');
             }
@@ -350,8 +434,9 @@
 
         // --- Inisialisasi dan Event Listeners ---
 
-        // Inisialisasi bintang
-        createStars();
+        // Inisialisasi bintang untuk kedua container
+        createStarsForContainer(pelayananRatingContainer, 'pelayanan');
+        createStarsForContainer(timRatingContainer, 'tim');
         checkRatingSet();
 
         // 1. Tombol Mulai Survei
